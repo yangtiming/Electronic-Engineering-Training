@@ -47,3 +47,7 @@ you can watch a video from here:
 [youtube-video](https://github.com/yangtiming/El)
 
 <img src="https://github.com/yangtiming/Electronic-Engineering-Training/blob/master/imgs/pic%201.png" width="500px">
+sending 0 mean
+<img src="https://github.com/yangtiming/Electronic-Engineering-Training/blob/master/imgs/pic%202.png" width="500px">
+
+<img src="https://github.com/yangtiming/Electronic-Engineering-Training/blob/master/imgs/pic%203.png" width="500px">
