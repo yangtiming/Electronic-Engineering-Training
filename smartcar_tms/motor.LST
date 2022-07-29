@@ -1,0 +1,218 @@
+C51 COMPILER V9.00   MOTOR                                                                 12/13/2021 09:27:21 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MOTOR
+OBJECT MODULE PLACED IN motor.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE motor.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "motor.h"
+   2          #include "LCD12864.h"
+   3          #include "delay.h"
+   4          #include "uart.h"
+   5          u8 speed_level[3] = {50, 75, 95}, speed_idx = 1;
+   6          //0停止, 1前进, 2后退, 3左转, 4右转;
+   7          u8 run_flag = 0, last_run_flag = 0, obstacle = 0;
+   8          
+   9          //初始化
+  10          void MT_Init(void)
+  11          {
+  12   1              P2M0 = 0;P2M1 = 0;
+  13   1              IN2 = 1;
+  14   1              IN4 = 1;
+  15   1              P_SW2 |= BIT7;
+  16   1              PWMCKS = 0;
+  17   1              PWMCFG = 0;
+  18   1              //设置周期
+  19   1              PWMC = CYCLE;
+  20   1      
+  21   1              //双路占空比
+  22   1              PWM6CR = 0;
+  23   1              PWM6T1 = 0;
+  24   1              PWM6T2 = CYCLE * DUTY / 100;
+  25   1              PWM7CR = 0;
+  26   1              PWM7T1 = 0;
+  27   1              PWM7T2 = CYCLE * DUTY / 100;
+  28   1      
+  29   1              //使能PWM输出
+  30   1              PWMCR = BIT4 + BIT5;               
+  31   1              PWMCR |= ENPWM;
+  32   1              P_SW2 &= ~BIT7;
+  33   1      
+  34   1              //停止
+  35   1              MT_Stop();
+  36   1      }
+  37          
+  38          //设置小车速度
+  39          void MT_SetSpeed(u8 wide)
+  40          {
+  41   1              u8 wide1, wide2;
+  42   1              if(run_flag > 0 && wide > 0)
+  43   1              {
+  44   2                      switch(run_flag)
+  45   2                      {
+  46   3                              case 1:
+  47   3                                      wide1 = 100 - wide;
+  48   3                                      wide2 = 100 - wide;
+  49   3                                      break;
+  50   3                              case 2:
+  51   3                                      wide1 = wide;
+  52   3                                      wide2 = wide;
+  53   3                                      break;
+  54   3                              case 3:
+  55   3                                      wide1 = wide;
+C51 COMPILER V9.00   MOTOR                                                                 12/13/2021 09:27:21 PAGE 2   
+
+  56   3                                      wide2 = 100 - wide;
+  57   3                                      break;
+  58   3                              case 4:
+  59   3                                      wide1 = 100 - wide;
+  60   3                                      wide2 = wide;
+  61   3                                      break;
+  62   3                              default: return;                
+  63   3                      }
+  64   2                      P_SW2 |= BIT7;
+  65   2                      PWM6T2 = (u16)(CYCLE * wide1 / 100);
+  66   2                      PWM7T2 = (u16)(CYCLE * wide2 / 100);
+  67   2                      P_SW2 &= ~BIT7;
+  68   2                      PWMCR |= BIT4+BIT5;
+  69   2              }
+  70   1              else
+  71   1              {
+  72   2                      PWMCR &= ~(BIT4+BIT5);
+  73   2                      IN1 = 0;
+  74   2                      IN2 = 0;
+  75   2                      IN3 = 0;
+  76   2                      IN4 = 0;
+  77   2              }       
+  78   1      }
+  79          
+  80          //改变速度等级
+  81          void MT_ChangeSpeed(void)
+  82          {
+  83   1              u8 pStr[16] = "Speed Level:   ";
+  84   1              speed_idx = (speed_idx + 1) % 3;
+  85   1              pStr[13] = speed_idx + 1 + '0';
+  86   1              LCD12864_DisplayString(0,4,"速度改变");
+  87   1              UART1_SendString("ChangeSpeed\n");
+  88   1      }
+  89          
+  90          //前进
+  91          void MT_Forward(void)
+  92          {
+  93   1              run_flag = 1;
+  94   1              IN2 = 1;
+  95   1              IN4 = 1;
+  96   1              obstacle = 0;
+  97   1              MT_Start();
+  98   1                      UART1_SendString("Forward\n");
+  99   1              LCD12864_DisplayString(0,3,"小车前进"); 
+ 100   1              //PutString(0,0,"STATUS:Backward ");
+ 101   1      }
+ 102          
+ 103          //后退
+ 104          void MT_Backward(void)
+ 105          {
+ 106   1              run_flag = 2;
+ 107   1              IN2 = 0;
+ 108   1              IN4 = 0;
+ 109   1              obstacle = 0;
+ 110   1              MT_Start();
+ 111   1              UART1_SendString("Backward\n");
+ 112   1              LCD12864_DisplayString(0,3,"小车后退 ");
+ 113   1      //      PutString(0,0,"STATUS:Forward ");
+ 114   1      }
+ 115          
+ 116          //左转
+ 117          void MT_TurnLeft(void)
+C51 COMPILER V9.00   MOTOR                                                                 12/13/2021 09:27:21 PAGE 3   
+
+ 118          {
+ 119   1              run_flag = 3;
+ 120   1              IN2 = 0;
+ 121   1              IN4 = 1;
+ 122   1              obstacle = 0;
+ 123   1              MT_Start();
+ 124   1              UART1_SendString("TurnLeft\n");
+ 125   1              LCD12864_DisplayString(0,3,"小车左转 ");                
+ 126   1      //      PutString(0,0,"STATUS:TurnLeft ");
+ 127   1      }
+ 128          
+ 129          //右转
+ 130          void MT_TurnRight(void)
+ 131          {
+ 132   1              run_flag = 4;
+ 133   1              IN2 = 1;
+ 134   1              IN4 = 0;
+ 135   1              obstacle = 0;
+ 136   1              MT_Start();
+ 137   1              UART1_SendString("TurnRight\n");
+ 138   1              LCD12864_DisplayString(0,3,"小车右转");
+ 139   1              //PutString(0,0,"STATUS:TurnRight");
+ 140   1      }
+ 141          
+ 142          //小车停止
+ 143          void MT_Stop(void)
+ 144          {
+ 145   1               run_flag = 0;
+ 146   1              MT_SetSpeed(0);
+ 147   1              UART1_SendString("Stop\n");
+ 148   1              LCD12864_DisplayString(0,3,"小车停止");
+ 149   1      //      PutString(0,0,"STATUS:Stop     ");
+ 150   1      }
+ 151          
+ 152          //小车启动
+ 153          void MT_Start(void)
+ 154          {
+ 155   1              MT_SetSpeed(speed_level[speed_idx]);
+ 156   1      }
+ 157          
+ 158          //处理障碍物
+ 159          void MT_Handle_Obstacle(void)
+ 160          {       
+ 161   1              if(run_flag > 0 )
+ 162   1              {
+ 163   2                      IN2 = 1;
+ 164   2                      IN4 = 0;
+ 165   2                      obstacle = 0;
+ 166   2                      MT_Start();
+ 167   2                      UART1_SendString("TurnRight\n");
+ 168   2                      LCD12864_DisplayString(0,3,"小车避让");
+ 169   2              //      MT_TurnRight();
+ 170   2              }
+ 171   1      }
+ 172          
+ 173          //处理没有障碍物
+ 174          void MT_Handle_NoObstacle(void)
+ 175          {
+ 176   1              if(1)
+ 177   1              {
+ 178   2              //      obstacle = 0;
+ 179   2                      //恢复原来行驶状态
+C51 COMPILER V9.00   MOTOR                                                                 12/13/2021 09:27:21 PAGE 4   
+
+ 180   2                      switch(run_flag)
+ 181   2                      {
+ 182   3                              case 1: MT_Forward(); break;
+ 183   3                              case 2: MT_Backward(); break;
+ 184   3                              case 3: MT_TurnLeft(); break;
+ 185   3                              case 4: MT_TurnRight(); break;
+ 186   3                              default: break;
+ 187   3                      }
+ 188   2              }
+ 189   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    509    ----
+   CONSTANT SIZE    =    140    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7      18
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

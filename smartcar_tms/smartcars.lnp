@@ -1,0 +1,9 @@
+"main.obj",
+"LCD12864.obj",
+"Delay.obj",
+"motor.obj",
+"uart.obj",
+"sonic.obj",
+"infrared.obj" 
+TO "smartcars" 
+RAMSIZE(256) 

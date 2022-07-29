@@ -1,0 +1,256 @@
+C51 COMPILER V9.00   LCD1602                                                               12/10/2021 23:17:26 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE LCD1602
+OBJECT MODULE PLACED IN LCD1602.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE LCD1602.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include"LCD1602.h"
+   2          
+   3          
+   4          //========================================================================
+   5          void LCD_BusData(dat)
+   6          {
+   7   1               LCD_B7  = (dat&(0x01<<7))>>7;    //D7 -- Pin 8    
+   8   1               LCD_B6  = (dat&(0x01<<6))>>6;    //D6 -- Pin 7     
+   9   1               LCD_B5  = (dat&(0x01<<5))>>5;    //D5 -- Pin 6    
+  10   1               LCD_B4  = (dat&(0x01<<4))>>4;    //D4 -- Pin 5      
+  11   1               LCD_B3  = (dat&(0x01<<3))>>3;    //D3 -- Pin 4      
+  12   1               LCD_B2  = (dat&(0x01<<2))>>2;    //D2 -- Pin 3 
+  13   1               LCD_B1  = (dat&(0x01<<1))>>1;    //D1 -- Pin 2
+  14   1               LCD_B0  = (dat&(0x01<<0))>>0;    //D0 -- Pin 1
+  15   1      }
+  16          
+  17          
+  18          //========================================================================
+  19          // 函数: void   CheckBusy(void)
+  20          // 描述: 检测忙函数
+  21          // 参数: none.
+  22          // 返回: none.
+  23          // 版本: VER1.0
+  24          // 日期: 2013-4-1
+  25          // 备注: 
+  26          //========================================================================
+  27          void    CheckBusy(void)
+  28          {
+  29   1          long int i;
+  30   1          for(i=0; i<5000; i++)   {if(!LCD_B7)    break;}     //check the LCD busy or not. With time out
+  31   1      //  while(LCD_B7);          //check the LCD busy or not. Without time out
+  32   1      }
+  33          
+  34          
+  35          //========================================================================
+  36          // 函数: void CMD_Send_Init(unsigned char cmd)
+  37          // 描述: 初始化写命令(不检测忙)
+  38          // 参数: cmd: 要写的命令.
+  39          // 返回: none.
+  40          // 版本: VER1.0
+  41          // 日期: 2013-4-1
+  42          // 备注: 
+  43          //========================================================================
+  44          void CMD_Send_Init(unsigned char cmd)
+  45          {
+  46   1          LCD_RW = 0;
+  47   1          LCD_BusData(cmd);
+  48   1          LCD_DelayNop();
+  49   1          LCD_ENA = 1;
+  50   1          LCD_DelayNop();
+  51   1          LCD_ENA = 0;
+  52   1          LCD_BusData(0xff);
+  53   1      }
+  54          
+  55          //========================================================================
+C51 COMPILER V9.00   LCD1602                                                               12/10/2021 23:17:26 PAGE 2   
+
+  56          // 函数: void Write_CMD(unsigned char  cmd)
+  57          // 描述: 写命令(检测忙)
+  58          // 参数: cmd: 要写的命令.
+  59          // 返回: none.
+  60          // 版本: VER1.0
+  61          // 日期: 2013-4-1
+  62          // 备注: 
+  63          //========================================================================
+  64          void Write_CMD(unsigned char  cmd)
+  65          {
+  66   1          LCD_RS  = 0;
+  67   1          LCD_RW = 1;
+  68   1          LCD_BusData(0xff);
+  69   1          LCD_DelayNop();
+  70   1          LCD_ENA = 1;
+  71   1          CheckBusy();            //check the LCD busy or not.
+  72   1          LCD_ENA = 0;
+  73   1          LCD_RW = 0;
+  74   1          
+  75   1          LCD_BusData(cmd);
+  76   1          LCD_DelayNop();
+  77   1          LCD_ENA = 1;
+  78   1          LCD_DelayNop();
+  79   1          LCD_ENA = 0;
+  80   1          LCD_BusData(0xff);
+  81   1      }
+  82          
+  83          //========================================================================
+  84          // 函数: void Write_DIS_Data(unsigned char  dat)
+  85          // 描述: 写显示数据(检测忙)
+  86          // 参数: dat: 要写的数据.
+  87          // 返回: none.
+  88          // 版本: VER1.0
+  89          // 日期: 2013-4-1
+  90          // 备注: 
+  91          //========================================================================
+  92          void Write_DIS_Data(unsigned char dat)
+  93          {
+  94   1          LCD_RS = 0;
+  95   1          LCD_RW = 1;
+  96   1      
+  97   1          LCD_BusData(0xff);
+  98   1          LCD_DelayNop();
+  99   1          LCD_ENA = 1;
+ 100   1          CheckBusy();            //check the LCD busy or not.
+ 101   1          LCD_ENA = 0;
+ 102   1          LCD_RW = 0;
+ 103   1          LCD_RS  = 1;
+ 104   1      
+ 105   1          LCD_BusData(dat);
+ 106   1          LCD_DelayNop();
+ 107   1          LCD_ENA = 1;
+ 108   1          LCD_DelayNop();
+ 109   1          LCD_ENA = 0;
+ 110   1          LCD_BusData(0xff);
+ 111   1      }
+ 112          
+ 113          
+ 114          //========================================================================
+ 115          // 函数: void LCD_Init(void)
+ 116          // 描述: 初始化函数
+ 117          // 参数: none.
+C51 COMPILER V9.00   LCD1602                                                               12/10/2021 23:17:26 PAGE 3   
+
+ 118          // 返回: none.
+ 119          // 版本: VER1.0
+ 120          // 日期: 2013-4-1
+ 121          // 备注: 
+ 122          //========================================================================
+ 123           void LCD_Init(void)
+ 124          {
+ 125   1          LCD_ENA = 0;
+ 126   1          LCD_RS  = 0;
+ 127   1          LCD_RW = 0;
+ 128   1      
+ 129   1          Delay_Nms(100);
+ 130   1          CMD_Send_Init(C_BIT8);     //set the data is 8 bits
+ 131   1      
+ 132   1          Delay_Nms(10);
+ 133   1          Write_CMD(C_L2DOT7);        //tow lines 5*7 dots
+ 134   1      
+ 135   1          Delay_Nms(6);
+ 136   1          Write_CMD(C_CLEAR);     //clear LCD RAM
+ 137   1          Write_CMD(C_CUR_R);     //Curror Shift Right
+ 138   1          Write_CMD(C_ON);        //turn on  LCD
+ 139   1              Clear_Line(0);
+ 140   1              Clear_Line(1);
+ 141   1      }
+ 142          
+ 143          
+ 144          
+ 145          //========================================================================
+ 146          // 函数: void Clear_Line(unsigned char row)
+ 147          // 描述: 清除1行
+ 148          // 参数: row: 行(0或1)
+ 149          // 返回: none.
+ 150          // 版本: VER1.0
+ 151          // 日期: 2013-4-1
+ 152          // 备注: 
+ 153          //========================================================================
+ 154          void Clear_Line(unsigned char row)
+ 155          {
+ 156   1          unsigned char i;
+ 157   1          Write_CMD(((row & 1) << 6) | 0x80);
+ 158   1          for(i=0; i<LineLength; i++) Write_DIS_Data(' ');
+ 159   1      }
+ 160          
+ 161          //========================================================================
+ 162          // 函数: void   WriteChar(u8 row, u8 column, u8 dat)
+ 163          // 描述: 指定行、列和字符, 写一个字符
+ 164          // 参数: row: 行(0或1),  column: 第几个字符(0~15),  dat: 要写的字符.
+ 165          // 返回: none.
+ 166          // 版本: VER1.0
+ 167          // 日期: 2013-4-1
+ 168          // 备注: 
+ 169          //========================================================================
+ 170          void  Write_Char(unsigned char row,unsigned char column,unsigned char dat)
+ 171          {
+ 172   1          Write_CMD((((row & 1) << 6) + column) | 0x80);
+ 173   1          Write_DIS_Data(dat);
+ 174   1      }
+ 175          
+ 176          //========================================================================
+ 177          // 函数: void PutString(unsigned char row,unsigned char column,unsigned char *puts)
+ 178          // 描述: 写一个字符串，指定行、列和字符串首地址
+ 179          // 参数: row: 行(0或1),  column: 第几个字符(0~15),  puts: 要写的字符串指针.
+C51 COMPILER V9.00   LCD1602                                                               12/10/2021 23:17:26 PAGE 4   
+
+ 180          // 返回: none.
+ 181          // 版本: VER1.0
+ 182          // 日期: 2013-4-1
+ 183          // 备注: 
+ 184          //========================================================================
+ 185          void PutString(unsigned char row, unsigned char column,unsigned char *puts)
+ 186          {
+ 187   1          Write_CMD((((row & 1) << 6) + column) | 0x80);
+ 188   1          for ( ;  *puts != 0;  puts++)       //遇到停止符0结束
+ 189   1          {
+ 190   2              Write_DIS_Data(*puts);
+ 191   2              if(++column >= LineLength)  break;
+ 192   2          }
+ 193   1      }
+ 194          
+ 195          //========================================================================
+ 196          // 函数: void Write_Num(unsigned char row, unsigned char column, unsigned char *puts)
+ 197          // 描述: 写数字
+ 198          // 参数: row: 行(0或1),  column: 第几个字符(0~15),  dat 要写的数字
+ 199          // 返回: none.
+ 200          // 版本: VER1.0
+ 201          // 日期: 2013-4-1
+ 202          // 备注: 
+ 203          //========================================================================
+ 204          void Write_Num(unsigned char row,unsigned char column,long int dat)
+ 205          {
+ 206   1              
+ 207   1              unsigned char num[8];
+ 208   1              unsigned char  i=0;
+ 209   1              unsigned char j;
+ 210   1              while(dat){
+ 211   2              num[i]=dat%10+'0';
+ 212   2              dat=dat/10;
+ 213   2              i++;
+ 214   2              }
+ 215   1              j=0;
+ 216   1              if(i==0){
+ 217   2              Write_Char(row,column+i-j,' ');
+ 218   2              Write_Char(row,column,'0');
+ 219   2              }
+ 220   1              i--;
+ 221   1              while(j<=i){
+ 222   2              Write_Char(row,column+i-j,' ');
+ 223   2              Write_Char(row,column+i-j,num[j]);
+ 224   2              j++;
+ 225   2              }
+ 226   1              
+ 227   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    731    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      28
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

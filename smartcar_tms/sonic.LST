@@ -1,0 +1,63 @@
+C51 COMPILER V9.00   SONIC                                                                 12/13/2021 09:27:21 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SONIC
+OBJECT MODULE PLACED IN sonic.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE sonic.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "sonic.h"
+   2          
+   3          //当前距离，单位 cm
+   4          u16 cur_dis = 0xffff;
+   5          
+   6          //超声波模块初始化
+   7          void SR_Init(void)
+   8          {
+   9   1              //P3端口模式，P3.0和P3.1连接echo和trig
+  10   1              P3M0 = 0;
+  11   1              P3M1 = 0;
+  12   1          EA = 1;
+  13   1      }
+  14          
+  15          //发送触发信号
+  16          void SR_SendTrig(void)
+  17          {
+  18   1              u16 len = 0;
+  19   1              TMOD = 0x01;                            //设置计时器
+  20   1              TH0 = 0;
+  21   1              TL0 = 0;
+  22   1              ET0 = 0;
+  23   1              SR_Trig = 1;
+  24   1              Delay10us();
+  25   1              SR_Trig = 0;
+  26   1              while(!SR_Echo);                        //开始计时
+  27   1              TR0 = 1;
+  28   1              while(SR_Echo);                         //结束计时
+  29   1              TR0 = 0;
+  30   1              len = (TH0 << 8) + TL0; //计算距离
+  31   1              cur_dis = (u16)(len * 1.7 / 100);
+  32   1              TH0 = 0;
+  33   1              TL0 = 0;
+  34   1      }
+  35          
+  36          //返回当前距离
+  37          u16 SR_GetDis(void)
+  38          {
+  39   1          return cur_dis;
+  40   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    101    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
